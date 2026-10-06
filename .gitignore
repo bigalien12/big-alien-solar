@@ -1,21 +1,41 @@
-# This .gitignore is appropriate for repositories deployed to GitHub Pages and using
-# a Gemfile as specified at https://Big_Alien_Solar_Web_Application
-.com/bigalien-gem#conventional
+const CACHE_NAME = 'big-alien-v1';
+const ASSETS = [
+    './',
+    './index.html',
+    './image.png',
+    './image_2.png',
+    './image_3.png',
+    './image_4.png'
+];
 
-# Basic Jekyll gitignores (synchronize to Jekyll.gitignore)
-_site/
-.sass-cache/
-.jekyll-cache/
-.jekyll-metadata
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => {
+            return cache.addAll(ASSETS);
+        })
+    );
+    self.skipWaiting();
+});
 
-# Additional Ruby/bundler ignore for when you run: bundle install
-/vendor
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys().then((keys) => {
+            return Promise.all(
+                keys.map((key) => {
+                    if (key !== CACHE_NAME) {
+                        return caches.delete(key);
+                    }
+                })
+            );
+        })
+    );
+    self.clients.claim();
+});
 
-# Specific ignore for GitHub Pages
-# GitHub Pages will always use its own deployed version of pages-gem
-# This means GitHub Pages will NOT use your Gemfile.lock and therefore it is
-# counterproductive to check this file into the repository.
-# Details at https://Big_Alien_Solar_Web_Application
-
-.com/bigalien/pages-gem/issues/768
-Gemfile.lock
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        caches.match(event.request).then((cachedResponse) => {
+            return cachedResponse || fetch(event.request);
+        })
+    );
+});
